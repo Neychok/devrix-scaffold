@@ -1,0 +1,21 @@
+{
+    "name": "devrix/scaffold",
+    "type": "library",
+    "autoload": {
+        "psr-4": {
+            "DevriX\\Scaffold\\": "src/"
+        }
+    },
+    "authors": [
+		{
+            "name": "DevriX",
+            "email": "nkalaydzhiev@devrix.com"
+        },
+        {
+            "name": "NeychoK",
+            "email": "nkalaydzhiev@devrix.com"
+        }
+    ],
+	"minimum-stability": "stable",
+    "require": {}
+}
