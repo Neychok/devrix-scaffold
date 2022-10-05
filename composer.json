@@ -20,6 +20,6 @@
 	"minimum-stability": "dev",
 	"bin": "devrix-cli",
     "require": {
-        "minicli/minicli": "dev-main"
+        "minicli/minicli": "^3.0"
     }
 }
