@@ -5,11 +5,7 @@ if (php_sapi_name() !== 'cli') {
     exit;
 }
 
-if (is_file(__DIR__.'/../autoload.php') === true) {
-    include_once __DIR__.'/../autoload.php';
-} else {
-    include_once __DIR__ . '/vendor/autoload.php';
-}
+include_once $_composer_autoload_path ?? __DIR__ . '/../vendor/autoload.php';
 
 use Minicli\App;
 use Minicli\Exception\CommandNotFoundException;
