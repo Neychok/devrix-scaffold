@@ -1,6 +1,7 @@
 {
     "name": "devrix/scaffold",
     "type": "library",
+	"license": "MIT",
     "autoload": {
         "psr-4": {
             "DevriX\\Scaffold\\": "src/"
@@ -17,6 +18,8 @@
         }
     ],
 	"minimum-stability": "dev",
-    "require": {},
-	"bin": "devrix"
+	"bin": "devrix-cli",
+    "require": {
+        "minicli/minicli": "dev-main"
+    }
 }
