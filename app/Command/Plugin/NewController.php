@@ -13,7 +13,7 @@ class NewController extends CommandController
         $printer = $this->getPrinter();
         $param = $this->getParams();
 
-        exec('git clone https://github.com/DevriX/dx-plugin-boilerplate plugin');
+        exec('git clone https://github.com/DevriX/dx-plugin-boilerplate');
 
     }
 }
