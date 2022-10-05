@@ -8,70 +8,98 @@ use Minicli\Input;
 
 class NewController extends CommandController
 {
+
+	public $plugin_name, $plugin_slug, $plugin_class, $namespace, $abbreviation;
+	
 	public function handle(): void
+	{
+		$this->handle_input();
+
+		if ( ! $this->hasFlag( 'skip-clone' ) ) {
+			$this->clone_repo();
+		}
+
+		if ( ! $this->hasFlag( 'skip-rename' ) ) {
+			$this->rename_files();
+		}
+
+		if ( ! $this->hasFlag( 'skip-npm' ) ) {
+			$this->run_npm();
+		}
+
+		$printer = $this->getPrinter();
+		$printer->newline();
+		$printer->success( 'Your plugin is ready to be enabled. Have a nice day :)' );
+	}
+
+	public function handle_input()
 	{
 		$printer = $this->getPrinter();
 		$confirm = false;
 
 		do {
-
 			// Ask for plugin name
 			do {
-				$plugin_name = strtolower( $this->prompt_input( '(1/5) Choose a name for the plugin:' ) );
-			} while ( empty( $plugin_name ) );
+				$this->plugin_name = $this->hasParam( 'name' ) ? $this->getParam( 'name' ) : $this->prompt_input( '(1/5) Choose a name for the plugin:' );
+			} while ( empty( $this->plugin_name ) );
 
+			$default_plugin_slug  = str_replace( ' ', '-', strtolower( $this->plugin_name ) );
+			$default_plugin_class = str_replace( ' ', '_', ucwords( strtolower( $this->plugin_name ) ) );
+			$default_namespace    = ucfirst( str_replace( ' ', '_', strtolower( $this->plugin_name ) ) );
+			$default_abbreviation = strtoupper( str_replace( ' ', '_', $this->plugin_name ) );
 
 			// Ask for plugin slug
-			$default_plugin_slug = str_replace( ' ', '-', $plugin_name );
-			$plugin_slug         = $this->prompt_input( '(2/5) Choose a slug for the plugin (default: ' . $default_plugin_slug . '):' );
-			if ( empty( $plugin_slug ) ) {
-				$plugin_slug = $default_plugin_slug;
+			$this->plugin_slug  = $this->hasParam( 'slug' ) ? $this->getParam( 'slug' ) : $this->prompt_input( '(2/5) Choose a slug for the plugin (default: ' . $default_plugin_slug . '):' );
+			$this->plugin_class = $this->hasParam( 'class' ) ? $this->getParam( 'class' ) : $this->prompt_input( '(3/5) Choose a main class for the plugin (default: ' . $default_plugin_class . '):' );
+			$this->namespace    = $this->hasParam( 'namespace' ) ? $this->getParam( 'namespace' ) : $this->prompt_input( '(4/5) Set a namespace: (default: ' . $default_namespace . ')' );
+			$this->abbreviation = $this->hasParam( 'abbr' ) ? $this->getParam( 'abbr' ) : $this->prompt_input( '(5/5) Set an abbreviation: (default: ' . $default_abbreviation . ')' );
+			
+			if ( empty( $this->plugin_slug ) ) {
+				$this->plugin_slug = $default_plugin_slug;
 			}
 
-			// Ask for plugin main class
-			$default_plugin_class = str_replace( ' ', '_', ucwords( $plugin_name ) );
-			$plugin_class         = $this->prompt_input( '(3/5) Choose a main class for the plugin (default: ' . $default_plugin_class . '):' );
-			if ( empty( $plugin_class ) ) {
-				$plugin_class = $default_plugin_class;
+			if ( empty( $this->plugin_class ) ) {
+				$this->plugin_class = $default_plugin_class;
 			}
 	
-			// Ask for plugin namespace
-			$default_namespace = ucfirst( str_replace( ' ', '_', $plugin_name ) );
-			$namespace         = $this->prompt_input( '(4/5) Set a namespace: (default: DX\\' . $default_namespace . ')' );
-			if ( empty( $namespace ) ) {
-				$namespace = 'DX\\' . $default_namespace;
+			if ( empty( $this->namespace ) ) {
+				$this->namespace = $default_namespace;
 			}
 
-			// Ask for plugin abberivation
-			$default_abbreviation = strtoupper( str_replace( ' ', '_', $plugin_name ) );
-			$abbreviation = $this->prompt_input( '(5/5) Set an abbreviation: (default: ' . $default_abbreviation . ')' );
-			if ( empty( $abbreviation ) ) {
-				$abbreviation = $default_abbreviation;
+			if ( empty( $this->abbreviation ) ) {
+				$this->abbreviation = $default_abbreviation;
 			}
 
 			$printer->newline();
 			$printer->out( 'Name: ', 'display' );
-			$printer->out( $plugin_name . "\r\n", 'info' );
+			$printer->out( $this->plugin_name . "\r\n", 'info' );
 			$printer->out( 'Slug: ', 'display' );
-			$printer->out( $plugin_slug . "\r\n", 'info' );
+			$printer->out( $this->plugin_slug . "\r\n", 'info' );
 			$printer->out( 'Main class: ', 'display' );
-			$printer->out( $plugin_class . "\r\n", 'info' );
+			$printer->out( $this->plugin_class . "\r\n", 'info' );
 			$printer->out( 'Namespace: ', 'display' );
-			$printer->out( $namespace . "\r\n", 'info' );
+			$printer->out( $this->namespace . "\r\n", 'info' );
 			$printer->out( 'Abbreviation: ', 'display' );
-			$printer->out( $abbreviation . "\r\n", 'info' );
+			$printer->out( $this->abbreviation . "\r\n", 'info' );
 
 			do {
-				$confirm = $this->prompt_input( 'Is this correct? (y/n)' );
-			} while ( ! in_array( $confirm, array( 'y', 'Y', 'yes', 'Yes', 'n', 'N', 'no', 'No' ), true ) );
+				$confirm_input = $this->prompt_input( 'Is this correct? (y/n)' );
+			} while ( ! in_array( $confirm_input, array( 'y', 'Y', 'yes', 'Yes', 'n', 'N', 'no', 'No' ), true ) );
 			
-			if ( in_array( $confirm, array( 'y', 'Y', 'yes', 'Yes' ), true ) ) {
+			if ( in_array( $confirm_input, array( 'y', 'Y', 'yes', 'Yes' ), true ) ) {
 				$confirm = true;
 			}
 
 		} while ( ! $confirm );
+	}
 
-		exec( 'git clone https://github.com/DevriX/dx-plugin-boilerplate ' . $plugin_slug . ' && cd ' . $plugin_slug . ' && rm -rf .git', $output, $return_var );
+	public function clone_repo()
+	{
+		$printer = $this->getPrinter();
+
+		$printer->newline();
+		$printer->display( 'Creating plugin...' );
+		exec( 'git clone https://github.com/DevriX/dx-plugin-boilerplate ' . $this->plugin_slug . ' && cd ' . $this->plugin_slug . ' && rm -rf .git', $output, $return_var );
 
 		if ( $return_var !== 0 ) {
 			$printer->newline();
@@ -79,7 +107,33 @@ class NewController extends CommandController
 			exit;
 		}
 
-		$php_files = $this->get_php_files( $plugin_slug );
+		$printer->out( 'Done.', 'success' );
+	}
+
+	public function run_npm()
+	{
+
+		$printer = $this->getPrinter();
+
+		$printer->newline();
+		$printer->display( 'Running NPM...' );
+
+		exec( 'cd ' . $this->plugin_slug . ' && npm i && npm run prod', $output, $return_var );
+
+		if ( $return_var !== 0 ) {
+			$printer->newline();
+			$printer->error( 'Error running NPM. Please check the output above.' );
+			exit;
+		}
+
+		$printer->out( 'Done.', 'success' );
+	}
+
+	public function rename_files()
+	{
+		$printer = $this->getPrinter();
+
+		$php_files = $this->get_php_files( $this->plugin_slug );
 
 		if ( empty( $php_files ) ) {
 			$printer->newline();
@@ -90,29 +144,77 @@ class NewController extends CommandController
 		if ( ! empty( $php_files ) && is_array( $php_files ) ) {
 
 			$printer->newline();
-			$printer->out( 'Replacing boilerplate strings.', 'info' );
+			$printer->newline();
+			$printer->out( 'Replacing boilerplate strings.', 'display' );
 
 			foreach ( $php_files as $file ) {
 				if ( ! is_file( $file ) ) {
 					continue;
 				}
-				$printer->out( '.', 'info' );
+				$printer->out( '.', 'display' );
 
 				$file_content = file_get_contents( $file );
 
-				$file_content = $this->replace_plugin_name( $file_content, $plugin_name );
-				$file_content = $this->replace_namespace( $file_content, $namespace );
-				$file_content = $this->replace_abbreviation( $file_content, $abbreviation );
-				$file_content = $this->replace_functions( $file_content, $plugin_slug );
-				$file_content = $this->replace_package( $file_content, $plugin_class );
+				$file_content = $this->replace_plugin_name( $file_content, $this->plugin_name );
+				$file_content = $this->replace_namespace( $file_content, $this->namespace );
+				$file_content = $this->replace_abbreviation( $file_content, $this->abbreviation );
+				$file_content = $this->replace_slug( $file_content, $this->plugin_slug );
+				$file_content = $this->replace_functions( $file_content, $this->plugin_slug );
+				$file_content = $this->replace_package( $file_content, $this->plugin_class );
 
 				file_put_contents( $file, $file_content );
-			}
-			$printer->out( 'done.', 'info' );
 
-			$printer->newline();
-			$printer->success( 'Your plugin is ready to be enabled. Have a nice day :)' );
+				if ( strpos( $file, 'plugin-name' ) !== false ) {
+					$new_file = str_replace( 'plugin-name', $this->plugin_slug, $file );
+					rename( $file, $new_file );
+				}
+			}
+			$printer->out( 'done.', 'success' );
 		}
+	}
+
+	public function replace_plugin_name( string $file_content, string $plugin_name ) : string
+	{
+		return str_replace( 'DX Plugin Name', $plugin_name, $file_content );
+	}
+
+	public function replace_namespace( string $file_content, string $namespace ) : string
+	{
+		$file_content = str_replace( 'namespace PLUGIN_NAME', 'namespace ' . $namespace, $file_content );
+		$file_content = str_replace( 'PLUGIN_NAME\\', $namespace . '\\', $file_content );
+
+		return $file_content;
+	}
+
+	public function replace_abbreviation( string $file_content, string $abbreviation ) : string
+	{
+		return str_replace( 'PLUGIN_NAME', strtoupper( $abbreviation ), $file_content );
+	}
+
+	public function replace_slug( string $file_content, string $plugin_slug ) : string
+	{
+		$file_content = str_replace( '\'plugin-name\'', '\'' . $plugin_slug . '\'', $file_content );
+		$file_content = str_replace( '"plugin-name"', '"' . $plugin_slug . '"', $file_content );
+		$file_content = str_replace( '-plugin-name', '-' . $plugin_slug, $file_content );
+		$file_content = str_replace( 'plugin-name-', $plugin_slug . '-', $file_content );
+
+		return $file_content;
+	}
+
+	public function replace_functions( string $file_content, string $function_name ) : string
+	{
+		$function_name = str_replace( '-', '_', $function_name );
+
+		$file_content = str_replace( '_plugin_name', '_' . $function_name, $file_content );
+		$file_content = str_replace( 'plugin_name_', $function_name . '_', $file_content );
+		$file_content = str_replace( 'get_' . $function_name, 'get_plugin_name' . '_', $file_content );
+
+		return $file_content;
+	}
+	
+	public function replace_package( string $file_content, string $plugin_main_class ) : string
+	{
+		return str_replace( 'Plugin_Name', $plugin_main_class, $file_content );
 	}
 
 	public function prompt_input( string $text ) : string
@@ -136,8 +238,8 @@ class NewController extends CommandController
 		foreach ( $files as $value ) {
 			
 			$path = realpath( $dir . DIRECTORY_SEPARATOR . $value );
-			
-			if ( pathinfo($path, PATHINFO_EXTENSION) === 'php' ) {
+
+			if ( in_array( pathinfo( $path, PATHINFO_EXTENSION ), array( 'php', 'scss', 'js', 'pot' ,'json' ) ) ) {
 				$results[] = $path;
 			} else if ( $value != "." && $value != ".." ) {
 				$this->get_php_files( $path, $results );
@@ -146,33 +248,4 @@ class NewController extends CommandController
 		return $results;
 	}
 
-	public function replace_plugin_name( string $file_content, string $plugin_name ) : string
-	{
-		return str_replace( 'DX Plugin Name', $plugin_name, $file_content );
-	}
-
-	public function replace_namespace( string $file_content, string $namespace ) : string
-	{
-		return str_replace( 'namespace PLUGIN_NAME', 'namespace ' . $namespace, $file_content );
-	}
-
-	public function replace_abbreviation( string $file_content, string $abbreviation ) : string
-	{
-		return str_replace( 'PLUGIN_NAME', strtoupper( $abbreviation ), $file_content );
-	}
-
-	public function replace_functions( string $file_content, string $function_name ) : string
-	{
-		$function_name = strtolower( $function_name );
-
-		$file_content = str_replace( '_plugin_name', '_' . $function_name, $file_content );
-		$file_content = str_replace( 'plugin_name_', $function_name . '_', $file_content );
-
-		return $file_content;
-	}
-	
-	public function replace_package( string $file_content, string $plugin_main_class ) : string
-	{
-		return str_replace( 'Plugin_Name', $plugin_main_class, $file_content );
-	}
 }
