@@ -11,6 +11,7 @@ class NewController extends CommandController
 	public function handle(): void
 	{
 		$printer = $this->getPrinter();
+		$confirm = false;
 
 		do {
 
@@ -60,19 +61,42 @@ class NewController extends CommandController
 			$printer->out( 'Abbreviation: ', 'display' );
 			$printer->out( $abbreviation . "\r\n", 'info' );
 
-			$confirm = $this->prompt_input( 'Is this correct? (y/n)' );
+			do {
+				$confirm = $this->prompt_input( 'Is this correct? (y/n)' );
+			} while ( ! in_array( $confirm, array( 'y', 'Y', 'yes', 'Yes', 'n', 'N', 'no', 'No' ), true ) );
+			
+			if ( in_array( $confirm, array( 'y', 'Y', 'yes', 'Yes' ), true ) ) {
+				$confirm = true;
+			}
 
-		} while ( ! in_array( $confirm, array( 'y', 'Y', 'yes', 'Yes' ), true ) );
+		} while ( ! $confirm );
 
-		exec( 'git clone https://github.com/DevriX/dx-plugin-boilerplate ' . $plugin_slug . ' && cd ' . $plugin_slug . ' && rm -rf .git' );
+		exec( 'git clone https://github.com/DevriX/dx-plugin-boilerplate ' . $plugin_slug . ' && cd ' . $plugin_slug . ' && rm -rf .git', $output, $return_var );
 
-		$php_files = $this->get_php_files( $plugin_name );
+		if ( $return_var !== 0 ) {
+			$printer->newline();
+			$printer->error( 'Error cloning the boilerplate. Please check the output above.' );
+			exit;
+		}
+
+		$php_files = $this->get_php_files( $plugin_slug );
+
+		if ( empty( $php_files ) ) {
+			$printer->newline();
+			$printer->error( 'No PHP files found in the plugin directory. Please check the output above.' );
+			exit;
+		}
 
 		if ( ! empty( $php_files ) && is_array( $php_files ) ) {
+
+			$printer->newline();
+			$printer->out( 'Replacing boilerplate strings.', 'info' );
+
 			foreach ( $php_files as $file ) {
 				if ( ! is_file( $file ) ) {
 					continue;
 				}
+				$printer->out( '.', 'info' );
 
 				$file_content = file_get_contents( $file );
 
@@ -84,6 +108,10 @@ class NewController extends CommandController
 
 				file_put_contents( $file, $file_content );
 			}
+			$printer->out( 'done.', 'info' );
+
+			$printer->newline();
+			$printer->success( 'Your plugin is ready to be enabled. Have a nice day :)' );
 		}
 	}
 
