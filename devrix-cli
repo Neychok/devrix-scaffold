@@ -17,7 +17,7 @@ $app = new App([
     'debug' => false,
 ]);
 
-$app->registerCommand('test', function () use ($app) {
+$app->registerCommand('devrix', function () use ($app) {
     $app->getPrinter()->success('Hello World!' , false);
     $app->getPrinter()->info('With Background!' , true);
     $app->getPrinter()->error('Quitting!', false);
