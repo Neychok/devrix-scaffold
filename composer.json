@@ -23,5 +23,6 @@
     "allow-plugins": {
       "pestphp/pest-plugin": true
     }
-  }
+  },
+  "bin": "dx-scaffold"
 }
