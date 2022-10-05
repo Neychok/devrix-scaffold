@@ -16,7 +16,7 @@
             "email": "nkalaydzhiev@devrix.com"
         }
     ],
-	"minimum-stability": "stable",
+	"minimum-stability": "dev",
     "require": {},
 	"bin": "devrix"
 }
