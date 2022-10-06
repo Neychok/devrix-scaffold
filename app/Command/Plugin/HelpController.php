@@ -5,7 +5,7 @@ namespace App\Command\Plugin;
 use Minicli\Command\CommandController;
 
 
-class NewController extends CommandController
+class HelpController extends CommandController
 {
 	public function handle(): void
 	{
