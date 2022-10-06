@@ -247,5 +247,4 @@ class NewController extends CommandController
 		}
 		return $results;
 	}
-
 }
